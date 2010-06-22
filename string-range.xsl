@@ -3,6 +3,7 @@
   xmlns:xs="http://www.w3.org/2001/XMLSchema" exclude-result-prefixes="xs"
   xmlns:t="http://www.tei-c.org/ns/1.0" version="2.0">
   
+  <!--
   <xsl:template match="/">
     <tests>
       <test n="1">
@@ -18,6 +19,7 @@
     
     
   </xsl:template>
+  -->
   
   <xsl:function name="t:get-string-range">
     <xsl:param name="elt"/>
@@ -70,6 +72,13 @@
       </xsl:apply-templates>
     </xsl:variable>
     <xsl:copy-of select="$fragment"/>
+  </xsl:function>
+  
+  <xsl:function name="t:normalize-text">
+    <xsl:param name="text"/>
+    <xsl:for-each select="$text">
+      <xsl:sequence select="replace(replace(., '\n', ''), '\s+', ' ')"/>
+    </xsl:for-each>
   </xsl:function>
   
   <xsl:template name="flatten">
