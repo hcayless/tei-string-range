@@ -36,18 +36,8 @@
   
   <xsl:template match="t:div[@type='edition' and @subtype='text']"/>
   
-  <xsl:template match="t:ptr[starts-with(@target, '#string-range')]" mode="strip-text">
-    <xsl:variable name="range" select="t:parse-string-range(@target)"/> 
-    <xsl:value-of select="t:get-string-range(//*[@xml:id = $range[1]], $range[2] + 1, $range[2] + $range[3] + 1)"/>
+  <xsl:template match="t:ptr[contains(@target, '#string-range')]" mode="strip-text">
+    <xsl:value-of select="t:eval-string-range(@target, /)"/>
   </xsl:template>
-  
-  <xsl:function name="t:parse-string-range">
-    <xsl:param name="xptr"/>
-    <xsl:variable name="apos">[']</xsl:variable>
-    <xsl:for-each select="tokenize(replace(substring-before(substring-after($xptr, '#string-range('), ')'), $apos, ''), ',\s*')">
-      <xsl:value-of select="."/>
-    </xsl:for-each>
-  </xsl:function>
-  
-
+ 
 </xsl:stylesheet>

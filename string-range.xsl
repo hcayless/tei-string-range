@@ -81,6 +81,27 @@
     </xsl:for-each>
   </xsl:function>
   
+  <xsl:function name="t:eval-string-range">
+    <xsl:param name="url"/>
+    <xsl:param name="root"/>
+    <xsl:variable name="range" select="t:parse-string-range($url)"/> 
+    <xsl:variable name="doc">
+      <xsl:choose>
+        <xsl:when test="starts-with($url, '#')"><xsl:copy-of select="$root"/></xsl:when>
+        <xsl:otherwise><xsl:copy-of select="doc(substring-before($url, '#'))"/></xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:value-of select="t:get-string-range($doc//*[@xml:id = $range[1]], $range[2] + 1, $range[2] + $range[3] + 1)"/>
+  </xsl:function>
+  
+  <xsl:function name="t:parse-string-range">
+    <xsl:param name="pointer"/>
+    <xsl:variable name="apos">[']</xsl:variable>
+    <xsl:for-each select="tokenize(replace(substring-before(substring-after($pointer, '#string-range('), ')'), $apos, ''), ',\s*')">
+      <xsl:value-of select="."/>
+    </xsl:for-each>
+  </xsl:function>
+  
   <xsl:template name="flatten">
     <xsl:param name="elt"/>
     <xsl:apply-templates select="$elt" mode="flatten"/>
