@@ -3,29 +3,11 @@
   xmlns:xs="http://www.w3.org/2001/XMLSchema" exclude-result-prefixes="xs"
   xmlns:t="http://www.tei-c.org/ns/1.0" version="2.0">
   
-  <!--
-  <xsl:template match="/">
-    <tests>
-      <test n="1">
-        <xsl:copy-of select="t:get-string-range(//t:div[@type='edition'], 18, 30)"/>
-      </test>
-      <test n="2">
-        <xsl:copy-of select="t:get-milestone-range(//t:div[@type='edition'], 18, 30)"/>
-      </test>
-      <test n="3">
-        <xsl:copy-of select="t:get-fragment-range(//t:div[@type='edition'], 18, 30)"/>
-      </test>
-    </tests>
-    
-    
-  </xsl:template>
-  -->
-  
   <xsl:function name="t:get-string-range">
     <xsl:param name="elt"/>
     <xsl:param name="start"/>
     <xsl:param name="end"/>
-    <xsl:sequence select="substring(string($elt), $start, $end - $start)"/>
+    <xsl:sequence select="substring(string($elt), $start, $end - $start + 1)"/>
   </xsl:function>
   
   <xsl:function name="t:get-milestone-range">
@@ -59,10 +41,25 @@
     <xsl:param name="elt"/>
     <xsl:param name="start"/>
     <xsl:param name="end"/>
+    <xsl:variable name="preceding-text" select="count($elt/preceding::text())"/>
+    <xsl:variable name="start-index">
+      <xsl:call-template name="get-text-index">
+        <xsl:with-param name="index">1</xsl:with-param>
+        <xsl:with-param name="position" select="$start"/>
+        <xsl:with-param name="sequence" select="$elt//text()"/>
+      </xsl:call-template>
+    </xsl:variable>
+    <xsl:variable name="end-index">
+      <xsl:call-template name="get-text-index">
+        <xsl:with-param name="index">1</xsl:with-param>
+        <xsl:with-param name="position" select="$end"/>
+        <xsl:with-param name="sequence" select="$elt//text()"/>
+      </xsl:call-template>
+    </xsl:variable>
     <!-- Find the starting text() node -->
-    <xsl:variable name="start-node" select="$elt//text()[string-length(string-join(preceding::text()[ancestor::* = $elt], '')) &lt; $start and (string-length(string-join(preceding::text()[ancestor::* = $elt], '')) + string-length(.)) &gt;= $start]"/>
+    <xsl:variable name="start-node" select="$elt//text()[count(preceding::text()) - $preceding-text = $start-index - 1]"/>
     <!-- Find the ending text() node -->
-    <xsl:variable name="end-node" select="$elt//text()[string-length(string-join(preceding::text()[ancestor::* = $elt], '')) &lt; $end and (string-length(string-join(preceding::text()[ancestor::* = $elt], '')) + string-length(.)) &gt;= $end]"/>
+    <xsl:variable name="end-node" select="$elt//text()[count(preceding::text()) - $preceding-text = $end-index - 1]"/>
     <xsl:variable name="fragment">
       <xsl:apply-templates select="$elt" mode="fragment">
         <xsl:with-param name="start-node" select="$start-node"/>
@@ -73,6 +70,26 @@
     </xsl:variable>
     <xsl:copy-of select="$fragment"/>
   </xsl:function>
+  
+  <xsl:template name="get-text-index">
+    <xsl:param name="index"/>
+    <xsl:param name="position"/>
+    <xsl:param name="sequence"/>
+    <xsl:variable name="start-index" select="string-length(string-join(subsequence($sequence, 1, $index - 1), ''))"/>
+    <xsl:variable name="end-index" select="string-length(string-join(subsequence($sequence, 1, $index - 1), ''))  + string-length($sequence[number($index)])"/>
+    <xsl:choose>
+      <xsl:when test="$start-index &lt;= $position and $end-index &gt;= $position"><xsl:value-of select="number($index)"/></xsl:when>
+      <xsl:otherwise>
+        <xsl:if test="number($index) &lt; count($sequence)">
+          <xsl:call-template name="get-text-index">
+            <xsl:with-param name="index" select="$index + 1"/>
+            <xsl:with-param name="position" select="$position"/>
+            <xsl:with-param name="sequence" select="$sequence"/>
+          </xsl:call-template>
+        </xsl:if>
+        </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
   
   <xsl:function name="t:normalize-text">
     <xsl:param name="text"/>

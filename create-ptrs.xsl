@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" exclude-result-prefixes="xs"
-    xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl" xmlns:tei="http://www.tei-c.org/ns/1.0"
-    xmlns:teiImpl="http://teiImpl" version="2.0">
+    xmlns:t="http://www.tei-c.org/ns/1.0"
+    xmlns="http://www.tei-c.org/ns/1.0"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+    xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl" 
+    version="2.0" exclude-result-prefixes="xs xd t">
 
-    <xsl:output indent="yes"/>
+    <xsl:output indent="yes" />
 
     <xd:doc scope="stylesheet">
         <xd:desc>
@@ -17,7 +19,7 @@
         </xd:desc>
     </xd:doc>
 
-    <xsl:function name="teiImpl:ptr-from-pi" as="element(tei:ptr)">
+    <xsl:function name="t:ptr-from-pi" as="element(t:ptr)">
         <xsl:param name="pi" as="processing-instruction('string-range-begin')"/>
         <!-- capture the id of this range -->
         <xsl:variable name="range" as="xs:string"
@@ -71,26 +73,49 @@
             <xsl:sequence select="string-length(string-join($in-between,''))"/>
             
         </xsl:variable>
-        <tei:ptr target="#string-range({$start-element/@xml:id}, {$offset}, {$length})"/>
+        <ptr xml:id="r{$range}" target="#string-range('{$start-element/@xml:id}', {$offset}, {$length})"/>
     </xsl:function>
 
-    <xsl:template match="/tei:TEI">
+    <xsl:template match="/t:TEI">
         <xsl:copy>
             <xsl:apply-templates/>
-            <linkGrp>
-                <xsl:for-each select="//processing-instruction(string-range-begin)">
-                    <xsl:copy-of select="teiImpl:ptr-from-pi(.)"/>
-                </xsl:for-each>
-            </linkGrp>
         </xsl:copy>
     </xsl:template>
+  
+  <xsl:template match="t:text">
+    <xsl:copy>
+      <xsl:choose>
+        <xsl:when test=".//t:back">
+          <xsl:apply-templates/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:apply-templates/>
+          <back>
+            <linkGrp>
+              <xsl:for-each select="//processing-instruction(string-range-begin)">
+                <xsl:copy-of select="t:ptr-from-pi(.)"/>
+              </xsl:for-each>
+            </linkGrp>
+          </back>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:copy>
+  </xsl:template>
+  
+  <xsl:template match="t:back">
+    <linkGrp>
+      <xsl:for-each select="//processing-instruction(string-range-begin)">
+        <xsl:copy-of select="t:ptr-from-pi(.)"/>
+      </xsl:for-each>
+    </linkGrp>
+  </xsl:template>
+  
+  <xsl:template match="processing-instruction(string-range-begin)"/>
 
     <xsl:template match="@*|node()">
-        <xsl:if test="not(processing-instruction(string-range-begin))">
-            <xsl:copy>
-                <xsl:apply-templates select="@*|node()"/>
-            </xsl:copy>
-        </xsl:if>
+        <xsl:copy>
+            <xsl:apply-templates select="@*|node()"/>
+        </xsl:copy>
     </xsl:template>
 
 </xsl:stylesheet>
